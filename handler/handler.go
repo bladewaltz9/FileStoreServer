@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -53,6 +54,8 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		fileMeta.FileSha1 = util.FileSha1(newFile)
 		meta.UpdateFileMeta(fileMeta)
 
+		fmt.Println(fileMeta)
+
 		http.Redirect(w, r, "/file/upload/success", http.StatusFound)
 	}
 }
@@ -60,4 +63,44 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 // UploadSuccessHandler: file upload finished
 func UploadSuccessHandler(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, "Upload finished!")
+}
+
+// GetFileMetaHandler: get file meta information
+func GetFileMetaHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	fileHash := r.Form["filehash"][0]
+	fileMeta := meta.GetFileMeta(fileHash)
+	data, err := json.Marshal(fileMeta)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Write(data)
+}
+
+// DownloadHandler: handle file download
+func DownloadHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	fileHash := r.Form.Get("filehash")
+	fileMeta := meta.GetFileMeta(fileHash)
+
+	fmt.Println("filehash: " + fileHash)
+	fmt.Println("download: " + fileMeta.FileName)
+
+	file, err := os.Open(fileMeta.Location)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/octect-stream")
+	w.Header().Set("Content-Description", "attachment; filename=\""+fileMeta.FileName+"\"")
+	w.Write(data)
 }
