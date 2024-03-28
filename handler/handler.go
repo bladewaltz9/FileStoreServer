@@ -5,6 +5,10 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"time"
+
+	"github.com/bladewaltz9/FileStoreServer/meta"
+	"github.com/bladewaltz9/FileStoreServer/util"
 )
 
 // UploadHandler: handle file upload
@@ -26,18 +30,28 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		defer file.Close()
 
-		newFile, err := os.Create("/tmp/" + header.Filename)
+		fileMeta := meta.FileMeta{
+			FileName:   header.Filename,
+			Location:   "/tmp/" + header.Filename,
+			UploadTime: time.Now().Format("2006-01-02 15:04:05"),
+		}
+
+		newFile, err := os.Create(fileMeta.Location)
 		if err != nil {
 			fmt.Println("Failed to create file, err: " + err.Error())
 			return
 		}
 		defer newFile.Close()
 
-		_, err = io.Copy(newFile, file)
+		fileMeta.FileSize, err = io.Copy(newFile, file)
 		if err != nil {
 			fmt.Println("Failed to store data to file, err: " + err.Error())
 			return
 		}
+
+		newFile.Seek(0, 0) // move the file pointer to the beginning of the file
+		fileMeta.FileSha1 = util.FileSha1(newFile)
+		meta.UpdateFileMeta(fileMeta)
 
 		http.Redirect(w, r, "/file/upload/success", http.StatusFound)
 	}
