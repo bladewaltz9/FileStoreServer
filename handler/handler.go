@@ -66,6 +66,7 @@ func UploadSuccessHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetFileMetaHandler: get file meta information
+// TODO: check if the file exists before returning
 func GetFileMetaHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	fileHash := r.Form["filehash"][0]
@@ -84,9 +85,6 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	fileHash := r.Form.Get("filehash")
 	fileMeta := meta.GetFileMeta(fileHash)
 
-	fmt.Println("filehash: " + fileHash)
-	fmt.Println("download: " + fileMeta.FileName)
-
 	file, err := os.Open(fileMeta.Location)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -100,7 +98,50 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/octect-stream")
+	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Description", "attachment; filename=\""+fileMeta.FileName+"\"")
 	w.Write(data)
+}
+
+// FileMetaUpdateHandler: update file meta information(rename)
+func FileMetaUpdateHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	opType := r.Form.Get("op")
+	fileHash := r.Form.Get("filehash")
+	newFileName := r.Form.Get("filename")
+
+	if opType != "0" {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	if r.Method != "POST" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	fileMeta := meta.GetFileMeta(fileHash)
+	fileMeta.FileName = newFileName
+	meta.UpdateFileMeta(fileMeta)
+
+	data, err := json.Marshal(fileMeta)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Write(data)
+}
+
+// FileDeleteHandler: delete file and meta
+func FileDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	fileHash := r.Form.Get("filehash")
+
+	// remove the real file from storage
+	fileMeta := meta.GetFileMeta(fileHash)
+	os.Remove(fileMeta.Location)
+
+	meta.RemoveFileMeta(fileHash)
+
+	w.WriteHeader(http.StatusOK)
 }
