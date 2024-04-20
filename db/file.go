@@ -9,7 +9,7 @@ import (
 
 // OnFileUploadFinished: file upload successfully, insert meta info into database
 func OnFileUploadFinished(fileHash string, fileName string, fileSize int64, fileAddr string) bool {
-	insertQuery := "INSERT IGNORE INTO tbl_file (file_sha1, file_name, file_size, file_addr, status) VALUES (?, ?, ?, ?, 1)"
+	insertQuery := "insert ignore into tbl_file (file_sha1, file_name, file_size, file_addr, status) values (?, ?, ?, ?, 1)"
 	stmt, err := mydb.DBConn().Prepare(insertQuery)
 	if err != nil {
 		fmt.Println("Failed to prepare statement, err: ", err)
@@ -39,7 +39,7 @@ type TableFile struct {
 
 // GetFileMeta: get file meta info from MySQL by file hash
 func GetFileMeta(fileHash string) (*TableFile, error) {
-	selectQuery := "SELECT file_sha1, file_name, file_size, file_addr FROM tbl_file WHERE file_sha1 = ? and status = 1 limit 1"
+	selectQuery := "select file_sha1, file_name, file_size, file_addr from tbl_file where file_sha1 = ? and status = 1 limit 1"
 	stmt, err := mydb.DBConn().Prepare(selectQuery)
 	if err != nil {
 		fmt.Println(err.Error())
