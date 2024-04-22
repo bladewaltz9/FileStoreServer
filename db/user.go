@@ -48,7 +48,6 @@ func UserSignin(username string, encPasswd string) bool {
 		fmt.Println("user not found: " + username)
 		return false
 	}
-
 	pRows := mydb.ParseRows(rows)
 	if len(pRows) > 0 && string(pRows[0]["user_pwd"].([]byte)) == encPasswd {
 		return true

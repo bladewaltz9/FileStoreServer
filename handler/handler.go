@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/bladewaltz9/FileStoreServer/db"
 	"github.com/bladewaltz9/FileStoreServer/meta"
 	"github.com/bladewaltz9/FileStoreServer/util"
 )
@@ -50,14 +51,21 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// TODO: 计算大文件的 hash 会比较久，可以进行异步处理
 		newFile.Seek(0, 0) // move the file pointer to the beginning of the file
 		fileMeta.FileSha1 = util.FileSha1(newFile)
 		// meta.UpdateFileMeta(fileMeta)
 		_ = meta.UpdateFileMetaDB(fileMeta)
 
-		fmt.Println(fileMeta)
-
-		http.Redirect(w, r, "/file/upload/success", http.StatusFound)
+		// update user file table
+		r.ParseForm()
+		username := r.Form.Get("username")
+		suc := db.OnUserFileUploadFinished(username, fileMeta.FileSha1, fileMeta.FileName, fileMeta.FileSize)
+		if suc {
+			http.Redirect(w, r, "/file/upload/success", http.StatusFound)
+		} else {
+			w.Write([]byte("Upload Failed"))
+		}
 	}
 }
 

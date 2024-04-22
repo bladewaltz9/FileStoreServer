@@ -70,7 +70,7 @@ func SigninHandler(w http.ResponseWriter, r *http.Request) {
 	// check username and password
 	pwdChecked := dblayer.UserSignin(username, encPasswd)
 	if !pwdChecked {
-		w.Write([]byte("FAILED"))
+		w.Write([]byte("Username or password incorrect"))
 		return
 	}
 
