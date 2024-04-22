@@ -32,3 +32,34 @@ func OnUserFileUploadFinished(username string, fileHash string, fileName string,
 	}
 	return true
 }
+
+// GetUserFileMetas: get user files info from database
+func GetUserFileMetas(username string, limit int) ([]UserFile, error) {
+	selectQuery := "select file_sha1, file_name, file_size, upload_at, last_update from tbl_user_file where user_name=? limit ?"
+	stmt, err := mydb.DBConn().Prepare(selectQuery)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(username, limit)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+
+	var userFiles []UserFile
+	for rows.Next() {
+		userFile := UserFile{}
+		err := rows.Scan(&userFile.FileHash, &userFile.FileName, &userFile.FileSize, &userFile.UploadAt, &userFile.LastUpdated)
+		if err != nil {
+			fmt.Println(err.Error())
+			break
+		}
+
+		userFiles = append(userFiles, userFile)
+	}
+	return userFiles, nil
+}

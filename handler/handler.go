@@ -6,9 +6,10 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
-	"github.com/bladewaltz9/FileStoreServer/db"
+	dblayer "github.com/bladewaltz9/FileStoreServer/db"
 	"github.com/bladewaltz9/FileStoreServer/meta"
 	"github.com/bladewaltz9/FileStoreServer/util"
 )
@@ -60,9 +61,9 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		// update user file table
 		r.ParseForm()
 		username := r.Form.Get("username")
-		suc := db.OnUserFileUploadFinished(username, fileMeta.FileSha1, fileMeta.FileName, fileMeta.FileSize)
+		suc := dblayer.OnUserFileUploadFinished(username, fileMeta.FileSha1, fileMeta.FileName, fileMeta.FileSize)
 		if suc {
-			http.Redirect(w, r, "/file/upload/success", http.StatusFound)
+			http.Redirect(w, r, "/static/view/home.html", http.StatusFound)
 		} else {
 			w.Write([]byte("Upload Failed"))
 		}
@@ -87,6 +88,26 @@ func GetFileMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data, err := json.Marshal(fileMeta)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Write(data)
+}
+
+// FileQueryHandler: batch query user's file metas
+func FileQueryHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	username := r.Form.Get("username")
+	limitCnt, _ := strconv.Atoi(r.Form.Get("limit"))
+
+	userFiles, err := dblayer.GetUserFileMetas(username, limitCnt)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	data, err := json.Marshal(userFiles)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
