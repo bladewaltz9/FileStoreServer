@@ -34,11 +34,11 @@ func GetFileMeta(fileSha1 string) FileMeta {
 	return fileMetas[fileSha1]
 }
 
-// GetFileMetaDB: gt file meta info from database
-func GetFileMetaDB(fileSha1 string) (FileMeta, error) {
+// GetFileMetaDB: get file meta info from database
+func GetFileMetaDB(fileSha1 string) (*FileMeta, error) {
 	tableFile, err := mydb.GetFileMeta(fileSha1)
-	if err != nil {
-		return FileMeta{}, err
+	if tableFile == nil || err != nil {
+		return nil, err
 	}
 	fileMeta := FileMeta{
 		FileSha1: tableFile.FileHash,
@@ -46,7 +46,7 @@ func GetFileMetaDB(fileSha1 string) (FileMeta, error) {
 		FileSize: tableFile.FileSize.Int64,
 		Location: tableFile.FileAddr.String,
 	}
-	return fileMeta, nil
+	return &fileMeta, nil
 }
 
 // RemoveFileMeta: delete file meta information

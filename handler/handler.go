@@ -181,3 +181,47 @@ func FileDeleteHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+func TryFastUploadHandler(w http.ResponseWriter, r *http.Request) {
+	// parse request parameters
+	r.ParseForm()
+	username := r.Form.Get("username")
+	filehash := r.Form.Get("filehash")
+	filename := r.Form.Get("filename")
+	filesize, _ := strconv.Atoi(r.Form.Get("filesize"))
+
+	// search the file with same hash in tbl_file
+	fileMeta, err := meta.GetFileMetaDB(filehash)
+	if err != nil {
+		fmt.Println(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// if no record is found, return failure
+	if fileMeta == nil {
+		resp := util.RespMsg{
+			Code: -1,
+			Msg:  "fast upload failed, please visit the normal upload interface.",
+		}
+		w.Write(resp.JSONBytes())
+		return
+	} else { // write file info to tbl_user_file, return success
+		suc := dblayer.OnUserFileUploadFinished(username, filehash, filename, int64(filesize))
+		if suc {
+			resp := util.RespMsg{
+				Code: 0,
+				Msg:  "fast upload successfully.",
+			}
+			w.Write(resp.JSONBytes())
+			return
+		} else {
+			resp := util.RespMsg{
+				Code: -2,
+				Msg:  "fast upload failed, please try again later.",
+			}
+			w.Write(resp.JSONBytes())
+			return
+		}
+	}
+}
