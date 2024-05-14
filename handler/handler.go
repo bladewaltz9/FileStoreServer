@@ -182,6 +182,7 @@ func FileDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// TryFastUploadHandler: handle fast upload
 func TryFastUploadHandler(w http.ResponseWriter, r *http.Request) {
 	// parse request parameters
 	r.ParseForm()

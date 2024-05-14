@@ -13,7 +13,7 @@ var db *sql.DB
 
 func init() {
 	var err error
-	db, err = sql.Open("mysql", "root:123456@tcp(127.0.0.1:3306)/fileserver?charset=utf8")
+	db, err = sql.Open("mysql", "root:Lollzp1999!@tcp(127.0.0.1:3306)/fileserver?charset=utf8")
 	if err != nil {
 		fmt.Println("Error connnecting to the database: ", err)
 		os.Exit(1)
