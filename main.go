@@ -12,6 +12,7 @@ func main() {
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
+	// file related APIs
 	http.HandleFunc("/file/upload", handler.UploadHandler)
 	http.HandleFunc("/file/upload/success", handler.UploadSuccessHandler)
 	http.HandleFunc("/file/meta", handler.GetFileMetaHandler)
@@ -21,6 +22,12 @@ func main() {
 	http.HandleFunc("/file/delete", handler.FileDeleteHandler)
 	http.HandleFunc("/file/fastupload", handler.TryFastUploadHandler)
 
+	// multipart upload related APIs
+	http.HandleFunc("/file/mpupload/init", handler.HTTPInterceptor(handler.InitailMultipartUploadHandler))
+	http.HandleFunc("/file/mpupload/uploadpart", handler.HTTPInterceptor(handler.UploadPartHandler))
+	http.HandleFunc("/file/mpupload/complete", handler.HTTPInterceptor(handler.CompleteUploadHandler))
+
+	// user related APIs
 	http.HandleFunc("/", handler.SigninHandler)
 	http.HandleFunc("/user/signup", handler.SignupHandler)
 	http.HandleFunc("/user/signin", handler.SigninHandler)
